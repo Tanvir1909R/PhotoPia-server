@@ -22,10 +22,16 @@ const db = async ()=>{
     const servicesCollection = client.db('photoPia').collection('services');
 
     app.get('/services', async(req, res)=>{
+        const limitQuery = parseInt(req.query.limit)
         const filter = {};
         const result = servicesCollection.find(filter);
-        const services = await result.toArray();
-        res.send(services)
+        if(limitQuery){
+            const services = await result.limit(limitQuery).toArray();
+            res.send(services)
+        }else{
+            const services = await result.toArray();
+            res.send(services)
+        }
     })
 }
 
