@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express();
 const port = process.env.PORT || 5000;
@@ -14,13 +14,13 @@ const uri = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWOR
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 
-app.get('/',(req,res)=>{
+app.get('/',(req,res)=>{    
     res.send('welcome to server')
 })
 
 const db = async ()=>{
     const servicesCollection = client.db('photoPia').collection('services');
-
+    const reviewsCollection = client.db('photoPia').collection('reviews')
     app.get('/services', async(req, res)=>{
         const limitQuery = parseInt(req.query.limit)
         const filter = {};
@@ -33,6 +33,20 @@ const db = async ()=>{
             res.send(services)
         }
     })
+
+    app.get('/service/:id', async(req, res)=>{
+        const id = req.params.id;
+        const filter = {_id: ObjectId(id)}
+        const service = await servicesCollection.findOne(filter)
+        res.send(service)
+    })
+
+    app.post('/reviews', async(req, res)=>{
+        const review = req.body;
+        const result = await reviewsCollection.insertOne(review);
+        res.send(result);
+    })
+
 }
 
 db().catch(console.dir);
