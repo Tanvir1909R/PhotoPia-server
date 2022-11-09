@@ -49,10 +49,18 @@ const db = async ()=>{
 
     app.get('/reviews', async(req, res)=>{
         const name = req.query.name;
-        const filter= { serviceName: name };
-        const result = reviewsCollection.find(filter);
-        const reviews = await result.toArray();
-        res.send(reviews)
+        const email = req.query.email;
+        if(name){
+            const filter= { serviceName: name };
+            const result = reviewsCollection.find(filter);
+            const reviews = await result.toArray();
+            res.send(reviews)
+        }else{
+            const filter= { email: email };
+            const result = reviewsCollection.find(filter);
+            const reviews = await result.toArray();
+            res.send(reviews)
+        }
     })
 
 }
