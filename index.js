@@ -47,6 +47,14 @@ const db = async ()=>{
         res.send(result);
     })
 
+    app.get('/reviews', async(req, res)=>{
+        const name = req.query.name;
+        const filter= { serviceName: name };
+        const result = reviewsCollection.find(filter);
+        const reviews = await result.toArray();
+        res.send(reviews)
+    })
+
 }
 
 db().catch(console.dir);
