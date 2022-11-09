@@ -25,8 +25,7 @@ const db = async () => {
   const reviewsCollection = client.db("photoPia").collection("reviews");
   app.get("/services", async (req, res) => {
     const limitQuery = parseInt(req.query.limit);
-    const filter = {};
-    const result = servicesCollection.find(filter);
+    const result = servicesCollection.find({});
     if (limitQuery) {
       const services = await result.limit(limitQuery).toArray();
       res.send(services);
@@ -35,6 +34,12 @@ const db = async () => {
       res.send(services);
     }
   });
+
+  app.post('/services', async(req, res)=>{
+    const service = req.body;
+    const result = await servicesCollection.insertOne(service);
+    res.send(result)
+  })
 
   app.get("/service/:id", async (req, res) => {
     const id = req.params.id;
