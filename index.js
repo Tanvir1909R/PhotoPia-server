@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require('jsonwebtoken')
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 const app = express();
@@ -18,6 +19,12 @@ const client = new MongoClient(uri, {
 app.get("/", (req, res) => {
   res.send("welcome to server");
 });
+
+app.post('/jwt', (req, res)=>{
+  const user = req.body;
+  const token = jwt.sign(user, process.env.TOKEN_SECRET, {expiresIn:'1d'});
+  res.send({token})
+})
 
 const db = async () => {
   const servicesCollection = client.db("photoPia").collection("services");
