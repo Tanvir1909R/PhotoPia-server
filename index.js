@@ -28,7 +28,9 @@ app.post('/jwt', (req, res)=>{
 
 const db = async () => {
   const servicesCollection = client.db("photoPia").collection("services");
-  const reviewsCollection = client.db("photoPia").collection("reviews");
+  // const reviewsCollection = client.db("photoPia").collection("reviews");
+  const serviceReviewsCollection = client.db('photoPia').collection('serviceReviews')
+  const myReviewsCollection = client.db('photoPia').collection('myReviews')
 
   app.get("/services", async (req, res) => {
     const limitQuery = parseInt(req.query.limit);
@@ -55,26 +57,56 @@ const db = async () => {
     res.send(service);
   });
 
-  app.post("/reviews", async (req, res) => {
-    const review = req.body;
-    review.time = new Date();
-    const result = await reviewsCollection.insertOne(review);
-    res.send(result);
-  });
+  // app.post("/reviews", async (req, res) => {
+  //   const review = req.body;
+  //   review.time = new Date();
+  //   const result = await reviewsCollection.insertOne(review);
+  //   res.send(result);
+  // });
 
-  app.get("/reviews", async (req, res) => {
-    const name = req.query.name;
+  app.get('/myreviews', async(req, res)=>{
     const email = req.query.email;
-    let filter;
-    if(name){
-      filter={ serviceName:name }
-    }else{
-      filter = { email:email }
-    }
-    const result = reviewsCollection.find(filter).sort({time:-1});
+    const filter = { email:email }
+    const result = myReviewsCollection.find(filter).sort({date:-1});
     const reviews = await result.toArray();
-    res.send(reviews);
-  });
+    res.send(reviews)
+  })
+
+  app.post('/myreviews', async(req, res)=>{
+    const myReview = req.body;
+    myReview.date = new Date()
+    const result = myReviewsCollection.insertOne(myReview);
+    res.send(result)
+  })
+
+  app.get('/servicereviews', async(req, res)=>{
+    const name = req.query.name;
+    const filter = { serviceName:name }
+    const result = serviceReviewsCollection.find(filter).sort({date:-1});
+    const reviews = await result.toArray();
+    res.send(reviews)
+  })
+
+  app.post('/servicereviews', async(req, res)=>{
+    const serviceReview = req.body;
+    serviceReview.date = new Date()
+    const result = await serviceReviewsCollection.insertOne(serviceReview)
+    res.send(result);
+  })
+
+  // app.get("/reviews", async (req, res) => {
+  //   const name = req.query.name;
+  //   const email = req.query.email;
+  //   let filter;
+  //   if(name){
+  //     filter={ serviceName:name }
+  //   }else{
+  //     filter = { email:email }
+  //   }
+  //   const result = reviewsCollection.find(filter).sort({time:-1});
+  //   const reviews = await result.toArray();
+  //   res.send(reviews);
+  // });
 
   app.put("/reviews/:id", async (req, res) => {
     const review = req.body;
