@@ -8,6 +8,21 @@ const port = process.env.PORT || 5000;
 //middleware
 app.use(cors());
 app.use(express.json());
+const verifyJwt = (req, res, next)=>{
+  const authHeader = req.headers.authorization;
+  if(!authHeader){
+    return res.status(401).send({message:'unauthorized access'})
+  }
+  const token = authHeader.split(' ')[1];
+  jwt.verify(token, process.env.TOKEN_SECRET, (err, decode)=>{
+    if(err){
+      return res.status(401).send({message:'unauthorized access'})
+    }
+    req.decoded = decode;
+    next()
+  })
+} 
+
 
 const uri = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@cluster0.5ki2fpf.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {
@@ -64,9 +79,12 @@ const db = async () => {
   //   res.send(result);
   // });
 
-  app.get('/myreviews', async(req, res)=>{
+  app.get('/myreviews',verifyJwt, async(req, res)=>{
     const email = req.query.email;
     const filter = { email:email }
+    if(req.decoded.email !== email){
+      res.status(403).send({message:'Forbidden Request'})
+    }
     const result = myReviewsCollection.find(filter).sort({date:-1});
     const reviews = await result.toArray();
     res.send(reviews)
@@ -94,21 +112,7 @@ const db = async () => {
     res.send(result);
   })
 
-  // app.get("/reviews", async (req, res) => {
-  //   const name = req.query.name;
-  //   const email = req.query.email;
-  //   let filter;
-  //   if(name){
-  //     filter={ serviceName:name }
-  //   }else{
-  //     filter = { email:email }
-  //   }
-  //   const result = reviewsCollection.find(filter).sort({time:-1});
-  //   const reviews = await result.toArray();
-  //   res.send(reviews);
-  // });
-
-  app.put("/reviews/:id", async (req, res) => {
+  app.put("/myreviews/:id", async (req, res) => {
     const review = req.body;
     const id = req.params.id;
     const filter = { _id: ObjectId(id) };
@@ -119,14 +123,14 @@ const db = async () => {
       },
     };
     const permission = { upsert: true };
-    const result = await reviewsCollection.updateOne(filter, updateDoc, permission);
+    const result = await myReviewsCollection.updateOne(filter, updateDoc, permission);
     res.send(result)
   });
 
-  app.delete("/reviews/:id", async (req, res) => {
+  app.delete("/myreviews/:id", async (req, res) => {
     const id = req.params.id;
     const filter = { _id: ObjectId(id) };
-    const result = await reviewsCollection.deleteOne(filter);
+    const result = await myReviewsCollection.deleteOne(filter);
     res.send(result);
   });
 };
