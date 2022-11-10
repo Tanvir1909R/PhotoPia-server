@@ -1,10 +1,10 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require('jsonwebtoken')
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
-
 //middleware
 app.use(cors());
 app.use(express.json());
@@ -19,6 +19,12 @@ const client = new MongoClient(uri, {
 app.get("/", (req, res) => {
   res.send("welcome to server");
 });
+
+app.post('/jwt', (req, res)=>{
+  const user = req.body;
+  const token = jwt.sign(user,process.env.TOKEN_SECRET,{expiresIn:'10h'})
+  res.send({token})
+})
 
 const db = async () => {
   const servicesCollection = client.db("photoPia").collection("services");
@@ -57,17 +63,23 @@ const db = async () => {
   app.get("/reviews", async (req, res) => {
     const name = req.query.name;
     const email = req.query.email;
-    if (name) {
-      const filter = { serviceName: name };
-      const result = reviewsCollection.find(filter);
-      const reviews = await result.toArray();
-      res.send(reviews);
-    } else {
-      const filter = { email: email };
-      const result = reviewsCollection.find(filter);
-      const reviews = await result.toArray();
-      res.send(reviews);
+    let filter;
+    if(name){
+      filter={ serviceName:name }
+    }else{
+      filter = { email:email }
     }
+    // if (name) {
+    //   const filter = { serviceName: name };
+    //   const result = reviewsCollection.find(filter);
+    //   const reviews = await result.toArray();
+    //   res.send(reviews);
+    // } else {
+    //   const filter = { email: email };
+    // }
+    const result = reviewsCollection.find(filter);
+    const reviews = await result.toArray();
+    res.send(reviews);
   });
 
   app.put("/reviews/:id", async (req, res) => {
