@@ -1,8 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const jwt = require('jsonwebtoken')
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const e = require("express");
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
@@ -16,35 +14,15 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
-const verifyJwt = (req, res, next)=>{
-  const authHeaders = req.headers.authorization;
-  if(!authHeaders){
-    return res.status(401).send({message:'unauthorized access Login please'})
-  }
-  const token = authHeaders.split(' ')[1];
-  jwt.verify(token, process.env.TOKEN_SECRET,(err, decode)=>{
-    if(err){
-      return res.status(401).send({message:'unauthorized access'})
-    }
-    req.decoded = decode;
-    next()
-  })
-}
-
 
 app.get("/", (req, res) => {
   res.send("welcome to server");
 });
 
-app.post('/jwt', (req, res)=>{
-  const user = req.body;
-  const token = jwt.sign(user,process.env.TOKEN_SECRET,{expiresIn:'1d'})
-  res.send({token})
-})
-
 const db = async () => {
   const servicesCollection = client.db("photoPia").collection("services");
   const reviewsCollection = client.db("photoPia").collection("reviews");
+
   app.get("/services", async (req, res) => {
     const limitQuery = parseInt(req.query.limit);
     const result = servicesCollection.find({});
@@ -72,23 +50,21 @@ const db = async () => {
 
   app.post("/reviews", async (req, res) => {
     const review = req.body;
+    review.time = new Date();
     const result = await reviewsCollection.insertOne(review);
     res.send(result);
   });
 
-  app.get("/reviews",verifyJwt, async (req, res) => {
+  app.get("/reviews", async (req, res) => {
     const name = req.query.name;
     const email = req.query.email;
-    if(req.decoded.email !== email){
-      res.status(403).send({message:'Forbidden request'})
-    }
     let filter;
     if(name){
       filter={ serviceName:name }
     }else{
       filter = { email:email }
     }
-    const result = reviewsCollection.find(filter);
+    const result = reviewsCollection.find(filter).sort({time:-1});
     const reviews = await result.toArray();
     res.send(reviews);
   });
